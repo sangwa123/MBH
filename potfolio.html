@@ -663,6 +663,31 @@
                 <form id="contactForm" action="https://formspree.io/f/mzddzvzy" method="POST" class="space-y-6">
                     <input type="hidden" name="_subject" value="New contact from portfolio website">
 
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-2" for="name">Name</label>
+                            <input
+                                id="name"
+                                type="text"
+                                name="name"
+                                class="form-input w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white smooth-transition"
+                                placeholder="Your name"
+                                required
+                            >
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-2" for="phone">Phone number</label>
+                            <input
+                                id="phone"
+                                type="tel"
+                                name="phone"
+                                class="form-input w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white smooth-transition"
+                                placeholder="Your phone number"
+                                required
+                            >
+                        </div>
+                    </div>
+
                     <div>
                         <label class="block text-sm text-gray-400 mb-2" for="email">Your email</label>
                         <input
@@ -889,20 +914,60 @@
             }
         });
 
-        // Simple contact form validation before submitting to Formspree
+        // Simple contact form validation and AJAX submit to Formspree with inline success message
         const contactForm = document.getElementById('contactForm');
         if (contactForm) {
-            contactForm.addEventListener('submit', (e) => {
+            contactForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const nameInput = contactForm.querySelector('input[name="name"]');
+                const phoneInput = contactForm.querySelector('input[name="phone"]');
                 const emailInput = contactForm.querySelector('input[name="email"]');
                 const messageInput = contactForm.querySelector('textarea[name="message"]');
 
+                const name = nameInput ? nameInput.value.trim() : '';
+                const phone = phoneInput ? phoneInput.value.trim() : '';
                 const email = emailInput ? emailInput.value.trim() : '';
                 const message = messageInput ? messageInput.value.trim() : '';
 
-                if (!email || !message) {
-                    e.preventDefault();
-                    alert('Please fill in both your email and your message before sending.');
+                if (!name || !phone || !email || !message) {
+                    alert('Please fill in your name, phone number, email, and message before sending.');
                     return;
+                }
+
+                try {
+                    const formData = new FormData(contactForm);
+                    const response = await fetch(contactForm.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+
+                    if (response.ok) {
+                        contactForm.reset();
+
+                        let toast = document.getElementById('contact-success-toast');
+                        if (!toast) {
+                            toast = document.createElement('div');
+                            toast.id = 'contact-success-toast';
+                            toast.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 bg-emerald-600 text-white px-6 py-3 rounded-full shadow-lg z-[9999] text-sm flex items-center gap-2';
+                            toast.style.opacity = '0';
+                            toast.style.transition = 'opacity 0.3s ease';
+                            toast.innerText = 'Message sent successfully.';
+                            document.body.appendChild(toast);
+                        }
+
+                        toast.style.opacity = '1';
+                        setTimeout(() => {
+                            toast.style.opacity = '0';
+                        }, 3000);
+                    } else {
+                        alert('Something went wrong sending your message. Please try again later.');
+                    }
+                } catch (error) {
+                    alert('Network error. Please check your connection and try again.');
                 }
             });
         }
